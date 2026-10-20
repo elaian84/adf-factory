@@ -1,0 +1,42 @@
+name: path-check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-team-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce team folder boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.head_ref }}"
+          echo "PR branch: $BRANCH"
+
+          # Branch naming: feature/<team>/<name>, where team is platform, teamA, teamB, or teamC
+          TEAM=$(echo "$BRANCH" | cut -d/ -f2)
+          case "$BRANCH" in
+            feature/platform/*) ALLOWED="adf/shared/" ;;
+            feature/teamA/*|feature/teamB/*|feature/teamC/*) ALLOWED="adf/teams/$TEAM/" ;;
+            *) echo "::error::Branch must start with feature/platform/ or feature/teamA|teamB|teamC/"; exit 1 ;;
+          esac
+
+          git fetch origin "${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          BAD=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              "$ALLOWED"*|".github/"*|"CODEOWNERS"|"README.md") ;;
+              *) echo "::error file=$f::Changed outside $ALLOWED"; BAD=1 ;;
+            esac
+          done <<< "$CHANGED"
+
+          if [ "$BAD" -ne 0 ]; then exit 1; fi
+          echo "All changes are within $ALLOWED"

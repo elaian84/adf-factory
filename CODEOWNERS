@@ -1,0 +1,6 @@
+# Owners for ADF factory artifacts. Replace @elaian84 with Entra-synced GitHub teams
+# (for example @your-org/grp-adf-platform) once the org is created.
+/adf/shared/          @elaian84
+/adf/teams/teamA/     @elaian84
+/adf/teams/teamB/     @elaian84
+/adf/teams/teamC/     @elaian84
